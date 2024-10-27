@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - logicalFilePath: db/changelog/1.0.0/db.changelog.yaml
+  - include:
+      file: auth.sql
+      relativeToChangelogFile: true
+  - include:
+      file: confirm.sql
+      relativeToChangelogFile: true

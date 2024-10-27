@@ -14,5 +14,7 @@ interface AuthApi {
 
     fun basicRegister(request: BasicRegisterRequest)
 
+    fun verifyRegister(secret: String)
+
     fun checkAuth(token: AccessToken)
 }

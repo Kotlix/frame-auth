@@ -1,0 +1,28 @@
+spring:
+  liquibase:
+    enabled: true
+    user: postgres
+    password: postgres
+  datasource:
+    url: ???
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ???
+    password: ???
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+        transport:
+          protocol: smtp
+        debug: true
+
+token:
+  secret-key: ???
