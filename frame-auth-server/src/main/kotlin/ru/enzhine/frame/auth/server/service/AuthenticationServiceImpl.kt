@@ -15,6 +15,7 @@ import ru.enzhine.frame.auth.server.repo.dto.ConfirmVerifyEntity
 import ru.enzhine.frame.auth.server.repo.dto.TokenEntity
 import ru.enzhine.frame.auth.server.repo.dto.UserAuthEntity
 import ru.enzhine.frame.auth.server.repo.dto.UserProfileEntity
+import ru.enzhine.frame.auth.server.service.dto.ServiceUser
 import ru.enzhine.frame.auth.server.service.exception.AuthenticationAlreadyExistsException
 import ru.enzhine.frame.auth.server.service.exception.AuthenticationExpiredException
 import ru.enzhine.frame.auth.server.service.exception.AuthenticationFailedException
@@ -23,6 +24,7 @@ import ru.enzhine.frame.auth.server.token.TokenCoder
 import ru.enzhine.frame.auth.server.token.TokenGenerator
 import ru.enzhine.frame.auth.server.token.dto.IdentifiedToken
 import java.time.OffsetDateTime
+import kotlin.math.log
 
 @Service
 class AuthenticationServiceImpl(
@@ -153,7 +155,7 @@ class AuthenticationServiceImpl(
     override fun verifyRegister(secret: String) {
         val token = tokenCoder.parseIdentifiedToken(secret)
         val confirmVerifyEntity = confirmVerifyRepository.findById(token.id)
-            ?: throw AuthenticationFailedException("Verification token id is unknown")
+            ?: throw AuthenticationFailedException("Confirmation token id is unknown")
 
         if (confirmVerifyEntity.confirmed!!) {
             throw AuthenticationAlreadyExistsException("Already confirmed")
@@ -172,7 +174,7 @@ class AuthenticationServiceImpl(
         readOnly = true,
         propagation = Propagation.REQUIRED
     )
-    override fun validateToken(token: AccessToken) {
+    override fun serviceUserByToken(token: AccessToken): ServiceUser {
         val tw = tokenCoder.parseIdentifiedToken(token)
         val te = tokenRepository.findTokenByAuthId(tw.id)
             ?: throw AuthenticationFailedException("Token authId unknown")
@@ -182,5 +184,14 @@ class AuthenticationServiceImpl(
         if (te.content != token) {
             throw AuthenticationFailedException("Token wrong")
         }
+
+        val user = userAuthRepository.findById(te.userAuthId)!!
+        val profile = userProfileRepository.findByAuthId(te.userAuthId)!!
+        return ServiceUser(
+            id = user.id!!,
+            login = user.login,
+            username = profile.username,
+            email = profile.email
+        )
     }
 }

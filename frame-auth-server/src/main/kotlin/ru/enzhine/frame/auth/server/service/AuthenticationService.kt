@@ -1,6 +1,7 @@
 package ru.enzhine.frame.auth.server.service
 
 import ru.enzhine.frame.auth.api.AccessToken
+import ru.enzhine.frame.auth.server.service.dto.ServiceUser
 
 interface AuthenticationService {
 
@@ -10,5 +11,5 @@ interface AuthenticationService {
 
     fun verifyRegister(secret: String)
 
-    fun validateToken(token: AccessToken)
+    fun serviceUserByToken(token: AccessToken): ServiceUser
 }

@@ -35,6 +35,17 @@ class ConfirmEmailRepositoryImpl(
         ), ROW_MAPPER)
     }
 
+    override fun findLast(authId: Long): ConfirmEmailEntity? {
+        return jdbcTemplate.queryForObjectOrNull("""
+            select * from confirm_profile_email
+                where user_id = :user_id
+            order by created_at desc
+                limit 1;
+        """.trimIndent(), mapOf(
+            "user_id" to authId
+        ), ROW_MAPPER)
+    }
+
     override fun setConfirmed(entity: ConfirmEmailEntity): ConfirmEmailEntity {
         return jdbcTemplate.queryForObject("""
             update confirm_profile_email

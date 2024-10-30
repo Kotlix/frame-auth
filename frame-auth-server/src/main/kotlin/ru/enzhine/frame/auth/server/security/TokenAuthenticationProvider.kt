@@ -15,8 +15,8 @@ class TokenAuthenticationProvider(
     override fun authenticate(authentication: Authentication?): Authentication {
         val token = authentication?.principal as String? ?: throw AccessDeniedException("Authentication required")
         try {
-            authenticationService.validateToken(token)
-            return PreAuthenticatedAuthenticationToken("AuthenticatedUser", "ROLE_USER").apply {
+            val user = authenticationService.serviceUserByToken(token)
+            return PreAuthenticatedAuthenticationToken(user, "ROLE_USER").apply {
                 isAuthenticated = true
             }
         } catch (ex: AuthenticationException) {

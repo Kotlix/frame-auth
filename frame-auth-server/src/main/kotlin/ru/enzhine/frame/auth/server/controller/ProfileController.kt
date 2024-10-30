@@ -1,39 +1,53 @@
 package ru.enzhine.frame.auth.server.controller
 
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import ru.enzhine.frame.auth.api.ProfileApi
 import ru.enzhine.frame.auth.api.dto.*
+import ru.enzhine.frame.auth.server.service.ProfileService
+import ru.enzhine.frame.auth.server.service.dto.ServiceUser
 
 @RestController
 @RequestMapping("/api/v1/profile")
-class ProfileController : ProfileApi {
+class ProfileController(
+    val profileService: ProfileService
+) : ProfileApi {
 
-    @GetMapping("/email")
+    @PostMapping("/email")
     override fun changeEmail(@RequestBody request: ChangeEmailRequest) {
-        TODO("Not yet implemented")
+        val serviceUser = SecurityContextHolder.getContext().authentication.principal as ServiceUser
+        profileService.changeEmail(serviceUser, request.newEmail)
     }
 
-    override fun changeEmailApply(secret: String) {
-        TODO("Not yet implemented")
+    @GetMapping("/email-verify/{secret}")
+    override fun changeEmailApply(@PathVariable("secret") secret: String) {
+        profileService.verifyEmail(secret)
     }
 
-    override fun changeUsername(request: ChangeUsernameRequest) {
-        TODO("Not yet implemented")
+    @PostMapping("/username")
+    override fun changeUsername(@RequestBody request: ChangeUsernameRequest) {
+        val serviceUser = SecurityContextHolder.getContext().authentication.principal as ServiceUser
+        profileService.changeUsername(serviceUser, request.newUsername)
     }
 
-    override fun changeUsernameApply(secret: String) {
-        TODO("Not yet implemented")
+    @GetMapping("/username-verify/{secret}")
+    override fun changeUsernameApply(@PathVariable("secret") secret: String) {
+        profileService.verifyUsername(secret)
     }
 
-    override fun changePassword(request: ChangePasswordRequest) {
-        TODO("Not yet implemented")
+    @PostMapping("/password")
+    override fun changePassword(@RequestBody request: ChangePasswordRequest) {
+        val serviceUser = SecurityContextHolder.getContext().authentication.principal as ServiceUser
+        profileService.changePassword(serviceUser, request.newPassword)
     }
 
-    override fun changePasswordApply(secret: String) {
-        TODO("Not yet implemented")
+    @GetMapping("/password-verify/{secret}")
+    override fun changePasswordApply(@PathVariable("secret") secret: String) {
+        profileService.verifyPassword(secret)
     }
-
 }

@@ -3,6 +3,7 @@ package ru.enzhine.frame.auth.server.repo
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
+import ru.enzhine.frame.auth.server.repo.ConfirmPasswordRepositoryImpl.Companion
 import ru.enzhine.frame.auth.server.repo.dto.ConfirmUsernameEntity
 import ru.enzhine.frame.auth.server.repo.extension.queryForObjectOrNull
 import java.sql.ResultSet
@@ -32,6 +33,17 @@ class ConfirmUsernameRepositoryImpl(
             select * from confirm_profile_username where id = :id;
         """.trimIndent(), mapOf(
             "id" to id
+        ), ROW_MAPPER)
+    }
+
+    override fun findLast(authId: Long): ConfirmUsernameEntity? {
+        return jdbcTemplate.queryForObjectOrNull("""
+            select * from confirm_profile_username
+                where user_id = :user_id
+            order by created_at desc
+                limit 1;
+        """.trimIndent(), mapOf(
+            "user_id" to authId
         ), ROW_MAPPER)
     }
 

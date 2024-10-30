@@ -43,6 +43,6 @@ class AuthController(
 
     @PostMapping("/check")
     override fun checkAuth(@RequestBody token: AccessToken) {
-        authenticationService.validateToken(token)
+        authenticationService.serviceUserByToken(token)
     }
 }

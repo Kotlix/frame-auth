@@ -10,7 +10,7 @@ import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher
-import org.springframework.security.web.util.matcher.OrRequestMatcher
+import ru.enzhine.frame.auth.server.security.TokenAuthenticationExceptionHandler
 import ru.enzhine.frame.auth.server.security.TokenAuthenticationFilter
 import ru.enzhine.frame.auth.server.security.TokenAuthenticationProvider
 import ru.enzhine.frame.auth.server.service.AuthenticationService
@@ -49,6 +49,9 @@ class SecurityConfig {
             }
             .authorizeHttpRequests { it
                 .requestMatchers("/api/v1/auth/**").permitAll()
+            }
+            .exceptionHandling { it
+                .authenticationEntryPoint(TokenAuthenticationExceptionHandler())
             }
             .build()
 }

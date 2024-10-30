@@ -35,6 +35,17 @@ class ConfirmPasswordRepositoryImpl(
         ), ROW_MAPPER)
     }
 
+    override fun findLast(authId: Long): ConfirmPasswordEntity? {
+        return jdbcTemplate.queryForObjectOrNull("""
+            select * from confirm_user_password
+                where user_id = :user_id
+            order by created_at desc
+                limit 1;
+        """.trimIndent(), mapOf(
+            "user_id" to authId
+        ), ROW_MAPPER)
+    }
+
     override fun setConfirmed(entity: ConfirmPasswordEntity): ConfirmPasswordEntity {
         return jdbcTemplate.queryForObject("""
             update confirm_user_password
