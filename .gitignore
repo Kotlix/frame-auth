@@ -41,4 +41,3 @@ bin/
 
 ### Mac OS ###
 .DS_Store
-/frame-auth-server/src/main/resources/application-dev.yaml

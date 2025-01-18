@@ -1,0 +1,17 @@
+spring:
+  liquibase:
+    enabled: true
+    user: postgres
+    password: postgres
+  datasource:
+    url: 'jdbc:postgresql://172.25.213.177:5432/'
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  mail:
+    host: '172.25.213.177'
+    port: 1025
+
+token:
+  secret-key: JUST_RANDOM_SECRET_KEY
