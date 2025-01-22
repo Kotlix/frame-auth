@@ -7,8 +7,8 @@ plugins {
     kotlin("plugin.spring") apply false
     id("org.springframework.boot") apply false
     id("org.jlleitschuh.gradle.ktlint") apply false
-    id("io.spring.dependency-management")
     id("maven-publish")
+    id("io.spring.dependency-management")
 }
 
 subprojects {
@@ -18,6 +18,7 @@ subprojects {
         plugin("org.springframework.boot")
         plugin("io.spring.dependency-management")
         plugin("org.jlleitschuh.gradle.ktlint")
+        plugin("maven-publish")
     }
 
     val springBootVersion: String by project
@@ -42,24 +43,31 @@ subprojects {
         mavenLocal()
         mavenCentral()
     }
+
+    publishing {
+        publications {
+            create<MavenPublication>("maven") {
+                this.groupId = groupId
+                this.artifactId = project.name
+                this.version = versionId
+            }
+        }
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = URI.create("https://maven.pkg.github.com/Kotlix/frame-auth")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
+        }
+    }
 }
 
 tasks.withType<KotlinJvmCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
         freeCompilerArgs.add("-Xjsr305=strict")
-    }
-}
-
-publishing {
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = URI.create("https://maven.pkg.github.com/Kotlix/frame-auth")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
     }
 }
