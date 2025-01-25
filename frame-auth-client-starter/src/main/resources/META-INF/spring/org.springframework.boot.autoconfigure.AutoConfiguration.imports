@@ -1,1 +1,2 @@
 ru.kotlix.frame.auth.config.ClientsConfig
+ru.kotlix.frame.auth.config.TokenDecoderConfig
