@@ -20,9 +20,8 @@ class AESByteCoder(
 
     override fun decode(byteArray: ByteArray): ByteArray = getCipher(false).doFinal(byteArray)
 
-    private fun getCipher(enc: Boolean): Cipher {
-        return Cipher.getInstance(ALGO).apply {
+    private fun getCipher(enc: Boolean) =
+        Cipher.getInstance(ALGO).apply {
             init(if (enc) Cipher.ENCRYPT_MODE else Cipher.DECRYPT_MODE, key)
         }
-    }
 }

@@ -5,6 +5,9 @@ import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import ru.kotlix.frame.auth.api.token.TokenDecoder
+import ru.kotlix.frame.auth.api.token.TokenEncoder
+import ru.kotlix.frame.auth.server.coding.PasswordEncryptor
 import ru.kotlix.frame.auth.server.repo.ConfirmEmailRepository
 import ru.kotlix.frame.auth.server.repo.ConfirmPasswordRepository
 import ru.kotlix.frame.auth.server.repo.ConfirmUsernameRepository
@@ -16,10 +19,10 @@ import ru.kotlix.frame.auth.server.repo.dto.ConfirmUsernameEntity
 import ru.kotlix.frame.auth.server.service.dto.ServiceUser
 import ru.kotlix.frame.auth.server.service.exception.AuthenticationFailedException
 import ru.kotlix.frame.auth.server.service.exception.ProfileChangeException
-import ru.kotlix.frame.auth.server.token.TokenCoder
-import ru.kotlix.frame.auth.server.token.TokenGenerator
-import ru.kotlix.frame.auth.server.token.dto.IdentifiedToken
+import ru.kotlix.frame.auth.server.token.dto.VerificationToken
+import java.time.Instant
 import java.time.OffsetDateTime
+import java.util.UUID
 
 @Service
 class ProfileServiceImpl(
@@ -28,21 +31,11 @@ class ProfileServiceImpl(
     val confirmUsernameRepository: ConfirmUsernameRepository,
     val authRepository: UserAuthRepository,
     val profileRepository: UserProfileRepository,
-    val tokenGenerator: TokenGenerator,
-    val tokenCoder: TokenCoder,
+    val tokenEncoder: TokenEncoder<VerificationToken>,
+    val tokenDecoder: TokenDecoder<VerificationToken>,
+    val passwordEncryptor: PasswordEncryptor,
     val javaMailSender: JavaMailSender,
 ) : ProfileService {
-    private fun cropToken(
-        token: String,
-        len: Int,
-    ): String {
-        return if (token.length < len) {
-            token
-        } else {
-            token.substring(0, len)
-        }
-    }
-
     @Transactional(
         readOnly = false,
         propagation = Propagation.REQUIRED,
@@ -57,12 +50,12 @@ class ProfileServiceImpl(
             }
         }
         val now = OffsetDateTime.now()
-        val inToken = cropToken(tokenGenerator.generateRandomToken(now.toString()), 32)
+        val secret = cropToken(UUID.randomUUID().toString())
         val confEmail =
             confirmEmailRepository.save(
                 ConfirmEmailEntity(
                     id = null,
-                    secret = inToken,
+                    secret = secret,
                     createdAt = null,
                     expiresAt = now.plusMinutes(15),
                     confirmed = null,
@@ -70,7 +63,14 @@ class ProfileServiceImpl(
                     newEmail = newEmail,
                 ),
             )
-        val outToken = tokenCoder.stringifyIdentifiedToken(IdentifiedToken(confEmail.id!!, inToken))
+        val token =
+            tokenEncoder.encodeAndSign(
+                VerificationToken(
+                    id = confEmail.id!!,
+                    content = secret,
+                    timestamp = Instant.now().epochSecond,
+                ),
+            )
 
         val mimeMessage = javaMailSender.createMimeMessage()
         MimeMessageHelper(mimeMessage, false).apply {
@@ -78,7 +78,7 @@ class ProfileServiceImpl(
             setTo(serviceUser.email)
             setSubject("Please, confirm your email update")
             setText(
-                "You are changing your current email to $newEmail. Your verification token is: '$outToken'." +
+                "You are changing your current email to $newEmail. Your verification token is: '$token'." +
                     "Unless you confirm your email update in 15 minutes it will be cancelled.",
             )
         }
@@ -89,16 +89,16 @@ class ProfileServiceImpl(
         readOnly = false,
         propagation = Propagation.REQUIRED,
     )
-    override fun verifyEmail(secret: String) {
-        val token = tokenCoder.parseIdentifiedToken(secret)
+    override fun verifyEmail(token: String) {
+        val verificationToken = tokenDecoder.getPayload(token)
         val confirmEmailEntity =
-            confirmEmailRepository.findById(token.id)
+            confirmEmailRepository.findById(verificationToken.id)
                 ?: throw AuthenticationFailedException("Confirmation token id is unknown")
 
         if (confirmEmailEntity.confirmed!!) {
             throw AuthenticationFailedException("Already confirmed")
         }
-        if (confirmEmailEntity.secret != token.content) {
+        if (confirmEmailEntity.secret != verificationToken.content) {
             throw AuthenticationFailedException("Wrong token")
         }
         if (confirmEmailEntity.expiresAt.isBefore(OffsetDateTime.now())) {
@@ -122,12 +122,12 @@ class ProfileServiceImpl(
             }
         }
         val now = OffsetDateTime.now()
-        val inToken = cropToken(tokenGenerator.generateRandomToken(now.toString()), 32)
+        val secret = cropToken(UUID.randomUUID().toString())
         val confUsername =
             confirmUsernameRepository.save(
                 ConfirmUsernameEntity(
                     id = null,
-                    secret = inToken,
+                    secret = secret,
                     createdAt = null,
                     expiresAt = now.plusMinutes(15),
                     confirmed = null,
@@ -135,7 +135,14 @@ class ProfileServiceImpl(
                     newUsername = newUsername,
                 ),
             )
-        val outToken = tokenCoder.stringifyIdentifiedToken(IdentifiedToken(confUsername.id!!, inToken))
+        val outToken =
+            tokenEncoder.encodeAndSign(
+                VerificationToken(
+                    id = confUsername.id!!,
+                    content = secret,
+                    timestamp = Instant.now().epochSecond,
+                ),
+            )
 
         val mimeMessage = javaMailSender.createMimeMessage()
         MimeMessageHelper(mimeMessage, false).apply {
@@ -154,16 +161,16 @@ class ProfileServiceImpl(
         readOnly = false,
         propagation = Propagation.REQUIRED,
     )
-    override fun verifyUsername(secret: String) {
-        val token = tokenCoder.parseIdentifiedToken(secret)
+    override fun verifyUsername(token: String) {
+        val verificationToken = tokenDecoder.getPayload(token)
         val confirmUsernameEntity =
-            confirmUsernameRepository.findById(token.id)
+            confirmUsernameRepository.findById(verificationToken.id)
                 ?: throw AuthenticationFailedException("Confirmation token id is unknown")
 
         if (confirmUsernameEntity.confirmed!!) {
             throw AuthenticationFailedException("Already confirmed")
         }
-        if (confirmUsernameEntity.secret != token.content) {
+        if (confirmUsernameEntity.secret != verificationToken.content) {
             throw AuthenticationFailedException("Wrong token")
         }
         if (confirmUsernameEntity.expiresAt.isBefore(OffsetDateTime.now())) {
@@ -187,20 +194,27 @@ class ProfileServiceImpl(
             }
         }
         val now = OffsetDateTime.now()
-        val inToken = cropToken(tokenGenerator.generateRandomToken(now.toString()), 32)
+        val secret = cropToken(UUID.randomUUID().toString())
         val confPassword =
             confirmPasswordRepository.save(
                 ConfirmPasswordEntity(
                     id = null,
-                    secret = inToken,
+                    secret = secret,
                     createdAt = null,
                     expiresAt = now.plusMinutes(15),
                     confirmed = null,
                     userId = serviceUser.id,
-                    newPassword = newPassword,
+                    newPassword = passwordEncryptor.encrypt(newPassword),
                 ),
             )
-        val outToken = tokenCoder.stringifyIdentifiedToken(IdentifiedToken(confPassword.id!!, inToken))
+        val outToken =
+            tokenEncoder.encodeAndSign(
+                VerificationToken(
+                    id = confPassword.id!!,
+                    content = secret,
+                    timestamp = Instant.now().epochSecond,
+                ),
+            )
 
         val mimeMessage = javaMailSender.createMimeMessage()
         MimeMessageHelper(mimeMessage, false).apply {
@@ -219,16 +233,16 @@ class ProfileServiceImpl(
         readOnly = false,
         propagation = Propagation.REQUIRED,
     )
-    override fun verifyPassword(secret: String) {
-        val token = tokenCoder.parseIdentifiedToken(secret)
+    override fun verifyPassword(token: String) {
+        val verificationToken = tokenDecoder.getPayload(token)
         val confirmPasswordEntity =
-            confirmPasswordRepository.findById(token.id)
+            confirmPasswordRepository.findById(verificationToken.id)
                 ?: throw AuthenticationFailedException("Confirmation token id is unknown")
 
         if (confirmPasswordEntity.confirmed!!) {
             throw AuthenticationFailedException("Already confirmed")
         }
-        if (confirmPasswordEntity.secret != token.content) {
+        if (confirmPasswordEntity.secret != verificationToken.content) {
             throw AuthenticationFailedException("Wrong token")
         }
         if (confirmPasswordEntity.expiresAt.isBefore(OffsetDateTime.now())) {
@@ -236,5 +250,14 @@ class ProfileServiceImpl(
         }
         confirmPasswordRepository.setConfirmed(confirmPasswordEntity)
         authRepository.updatePassword(confirmPasswordEntity.userId, confirmPasswordEntity.newPassword)
+    }
+
+    private fun cropToken(token: String): String {
+        val len = 32
+        return if (token.length < len) {
+            token
+        } else {
+            token.substring(0, len)
+        }
     }
 }

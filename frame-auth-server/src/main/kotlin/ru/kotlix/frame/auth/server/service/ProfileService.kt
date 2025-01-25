@@ -8,19 +8,19 @@ interface ProfileService {
         newEmail: String,
     )
 
-    fun verifyEmail(secret: String)
+    fun verifyEmail(token: String)
 
     fun changeUsername(
         serviceUser: ServiceUser,
         newUsername: String,
     )
 
-    fun verifyUsername(secret: String)
+    fun verifyUsername(token: String)
 
     fun changePassword(
         serviceUser: ServiceUser,
         newPassword: String,
     )
 
-    fun verifyPassword(secret: String)
+    fun verifyPassword(token: String)
 }
