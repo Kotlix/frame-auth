@@ -1,6 +1,7 @@
 package ru.kotlix.frame.auth.server.token.dto
 
-data class IdentifiedToken(
+data class VerificationToken(
     val id: Long,
     val content: String,
+    val timestamp: Long,
 )

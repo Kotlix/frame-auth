@@ -46,9 +46,9 @@ class AuthController(
         authenticationService.verifyRegister(secret)
     }
 
-    @PostMapping("/check")
+    @PostMapping("/check/{token}")
     override fun checkAuth(
-        @RequestBody token: AccessToken,
+        @PathVariable("token") token: AccessToken,
     ) {
         authenticationService.serviceUserByToken(token)
     }
