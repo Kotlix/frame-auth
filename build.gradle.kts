@@ -50,6 +50,7 @@ subprojects {
                 this.groupId = groupId
                 this.artifactId = project.name
                 this.version = versionId
+                from(components["java"])
             }
         }
         repositories {
