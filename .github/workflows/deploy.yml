@@ -25,7 +25,7 @@ on:
         description: 'K8S service port'
         required: true
         type: string
-        default: '8080'
+        default: '30080'
       image_name:
         description: 'Docker image name'
         required: true
