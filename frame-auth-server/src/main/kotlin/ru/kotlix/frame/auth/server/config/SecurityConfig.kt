@@ -49,8 +49,7 @@ class SecurityConfig {
                     .requestMatchers("/api/v1/profile/**").authenticated()
             }
             .authorizeHttpRequests {
-                it
-                    .requestMatchers("/api/v1/auth/**").permitAll()
+                it.anyRequest().permitAll()
             }
             .exceptionHandling {
                 it
