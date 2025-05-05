@@ -15,6 +15,7 @@ spec:
       containers:
         - name: ${KTX_APP_NAME}
           image: ${KTX_IMAGE_NAME}:${KTX_IMAGE_VERSION}
+          imagePullPolicy: Never
           command: ["java","-Dspring.profiles.active=${KTX_APP_PROFILE}","-jar","/app.jar"]
           ports:
             - containerPort: 8080

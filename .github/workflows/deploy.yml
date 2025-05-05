@@ -74,6 +74,10 @@ jobs:
         if: ${{ inputs.build_image }}
         run: docker build -t $KTX_IMAGE_NAME:$KTX_IMAGE_VERSION ./docker
 
+      - name: K8s store image
+        if: ${{ inputs.build_image }}
+        run: minikube image load $KTX_IMAGE_NAME:$KTX_IMAGE_VERSION
+
       - name: Deploy to k8s
         env:
           # k8s prod secrets
