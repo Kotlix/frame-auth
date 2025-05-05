@@ -11,7 +11,7 @@ on:
       spring_profile:
         description: 'Active spring profile'
         required: true
-        default: 'dev'
+        default: 'prod'
         type: choice
         options:
           - dev
