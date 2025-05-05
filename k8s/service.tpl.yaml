@@ -7,6 +7,6 @@ spec:
     app: ${KTX_APP_NAME}
   ports:
     - protocol: TCP
-      port: ${KTX_APP_PORT}
+      port: 8080
       targetPort: ${KTX_SVC_PORT}
   type: NodePort

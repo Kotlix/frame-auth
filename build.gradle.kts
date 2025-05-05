@@ -31,9 +31,6 @@ subprojects {
         plugin("maven-publish")
     }
 
-    val springBootVersion: String by project
-    val springCloudVersion: String by project
-
     val groupId: String by project
     val versionIdNumber: String by project
     val versionIdStatus: String by project
@@ -44,8 +41,16 @@ subprojects {
 
     dependencyManagement {
         imports {
+            val springBootVersion: String by project
             mavenBom("org.springframework.boot:spring-boot-dependencies:$springBootVersion")
+
+            val springCloudVersion: String by project
             mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
+        }
+
+        dependencies {
+            val springDocVersion: String by project
+            dependency("org.springdoc:springdoc-openapi-starter-webmvc-ui:$springDocVersion")
         }
     }
 

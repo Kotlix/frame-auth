@@ -6,6 +6,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.liquibase:liquibase-core")
 
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui")
     implementation("org.springframework:spring-context-support")
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.springframework.boot:spring-boot-starter-web")
