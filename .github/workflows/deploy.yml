@@ -18,22 +18,22 @@ on:
           - prod
       app_name:
         description: 'K8S app name'
-        required: false
+        required: true
         type: string
         default: 'frame-auth'
       svc_port:
         description: 'K8S service port'
-        required: false
+        required: true
         type: string
         default: '8080'
       image_name:
         description: 'Docker image name'
-        required: false
+        required: true
         type: string
         default: 'frame-auth'
       image_version:
         description: 'Docker image version'
-        required: false
+        required: true
         type: string
         default: 'latest'
 env:
@@ -66,11 +66,13 @@ jobs:
 
       - name: Build with Gradle
         if: ${{ inputs.build_image }}
-        run: ./gradlew build
+        run: |
+          ./gradlew build
+          mv $KTX_JAR_PATH ./docker/app.jar
 
       - name: Build Docker image
         if: ${{ inputs.build_image }}
-        run: docker build -t $KTX_IMAGE_NAME:$KTX_IMAGE_VERSION --build-arg JAR_PATH=$KTX_JAR_PATH ./docker
+        run: docker build -t $KTX_IMAGE_NAME:$KTX_IMAGE_VERSION ./docker
 
       - name: Deploy to k8s
         env:
@@ -90,4 +92,5 @@ jobs:
           minikube kubectl apply -f ./k8s/service.yaml
 
       - name: Clean up workspace
+        if: always()
         run: rm -rf ${{ github.workspace }}/*
