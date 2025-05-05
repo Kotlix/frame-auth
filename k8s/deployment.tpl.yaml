@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${KTX_APP_NAME}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${KTX_APP_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${KTX_APP_NAME}
+    spec:
+      containers:
+        - name: ${KTX_APP_NAME}
+          image: ${KTX_IMAGE_NAME}:${KTX_IMAGE_VERSION}
+          ports:
+            - containerPort: 8080

@@ -1,0 +1,88 @@
+name: Deploy on k8s
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_image:
+        description: 'Build docker image'
+        required: true
+        type: boolean
+        default: true
+      spring_profile:
+        description: 'Active spring profile'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+      app_name:
+        description: 'K8S app name'
+        required: false
+        type: string
+        default: 'frame-auth'
+      app_port:
+        description: 'K8S app container port'
+        required: false
+        type: string
+        default: '8080'
+      svc_port:
+        description: 'K8S service port'
+        required: false
+        type: string
+        default: '8080'
+      image_name:
+        description: 'Docker image name'
+        required: false
+        type: string
+        default: 'frame-auth'
+      image_version:
+        description: 'Docker image version'
+        required: false
+        type: string
+        default: 'latest'
+env:
+  KTX_JAR_PATH: ./frame-auth-server/build/libs/*.jar
+  KTX_APP_NAME: ${{ inputs.app_name }}
+  KTX_APP_PORT: ${{ inputs.app_port }}
+  KTX_SVC_PORT: ${{ inputs.svc_port }}
+  KTX_IMAGE_NAME: ${{ inputs.image_name }}
+  KTX_IMAGE_VERSION: ${{ inputs.image_version }}
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Sync repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      if: ${{ inputs.build_image }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Make gradlew executable
+      if: ${{ inputs.build_image }}Z
+      run: chmod +x ./gradlew
+
+    - name: Build with Gradle
+      if: ${{ inputs.build_image }}
+      run: ./gradlew build
+
+    - name: Build Docker image
+      if: ${{ inputs.build_image }}
+      run: docker build -t KTX_IMAGE_NAME:$KTX_IMAGE_VERSION --build-arg JAR_PATH=$KTX_JAR_PATH ./docker/Dockerfile
+
+    - name: Deploy to k8s
+      run: |
+        envsubst < ./k8s/deployment.tpl.yaml > ./k8s/deployment.yaml
+        envsubst < ./k8s/service.tpl.yaml > ./k8s/service.yaml
+        
+        minikube kubectl apply -f ./k8s/deployment.yaml
+        minikube kubectl apply -f ./k8s/service.yaml
+
+    - name: Clean up
+      run: rm -rf ${{ github.workspace }}/*

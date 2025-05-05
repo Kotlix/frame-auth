@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.bundling.BootJar
+
 dependencies {
     api(project(":frame-auth-client"))
 
@@ -14,4 +16,16 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
 
     runtimeOnly("org.postgresql:postgresql")
+}
+
+tasks.getByName<BootJar>("bootJar") {
+    enabled = true
+}
+
+tasks.getByName<Jar>("jar") {
+    enabled = false
+}
+
+tasks.withType<PublishToMavenRepository> {
+    enabled = false
 }
