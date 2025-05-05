@@ -70,7 +70,7 @@ jobs:
 
       - name: Build Docker image
         if: ${{ inputs.build_image }}
-        run: docker build -t KTX_IMAGE_NAME:$KTX_IMAGE_VERSION --build-arg JAR_PATH=$KTX_JAR_PATH ./docker/Dockerfile
+        run: docker build -t $KTX_IMAGE_NAME:$KTX_IMAGE_VERSION --build-arg JAR_PATH=$KTX_JAR_PATH ./docker/Dockerfile
 
       - name: Deploy to k8s
         env:
