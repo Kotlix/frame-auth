@@ -88,8 +88,8 @@ jobs:
           envsubst < ./k8s/deployment.tpl.yaml > ./k8s/deployment.yaml
           envsubst < ./k8s/service.tpl.yaml > ./k8s/service.yaml
           
-          minikube kubectl apply -f ./k8s/deployment.yaml
-          minikube kubectl apply -f ./k8s/service.yaml
+          minikube kubectl -- apply -f ./k8s/deployment.yaml
+          minikube kubectl -- apply -f ./k8s/service.yaml
 
       - name: Clean up workspace
         if: always()
