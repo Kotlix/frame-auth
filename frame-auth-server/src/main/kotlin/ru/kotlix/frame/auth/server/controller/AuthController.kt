@@ -17,7 +17,7 @@ import ru.kotlix.frame.auth.server.service.AuthenticationService
 class AuthController(
     val authenticationService: AuthenticationService,
 ) : AuthApi {
-    @GetMapping("/login")
+    @PostMapping("/login")
     override fun basicLogin(
         @RequestBody request: BasicLoginRequest,
     ): AccessToken {

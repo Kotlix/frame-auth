@@ -15,7 +15,7 @@ import ru.kotlix.frame.auth.api.dto.ChangeUsernameRequest
 
 @FeignClient(name = "frame-auth-client", path = "/api/v1")
 interface AuthClient {
-    @GetMapping("/auth/login")
+    @PostMapping("/auth/login")
     fun basicLogin(
         @RequestBody request: BasicLoginRequest,
     ): AccessToken
