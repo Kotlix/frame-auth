@@ -7,6 +7,7 @@ import ru.kotlix.frame.auth.server.service.dto.ProfileInfo
 
 fun DetailProfileInfo.toFullProfileInfoDto() =
     FullProfileInfoDto(
+        id = id,
         login = login,
         username = username,
         email = email,

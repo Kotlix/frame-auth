@@ -276,6 +276,7 @@ class ProfileServiceImpl(
         val userAuth = authRepository.findById(initiatorId)!!
 
         return DetailProfileInfo(
+            id = userAuth.id!!,
             login = userAuth.login,
             username = userProfile.username,
             email = userProfile.email,
