@@ -1,26 +1,43 @@
 package ru.kotlix.frame.auth.server.service
 
-import ru.kotlix.frame.auth.server.service.dto.ServiceUser
+import ru.kotlix.frame.auth.server.service.dto.DetailProfileInfo
+import ru.kotlix.frame.auth.server.service.dto.ProfileInfo
 
 interface ProfileService {
     fun changeEmail(
-        serviceUser: ServiceUser,
+        initiatorId: Long,
         newEmail: String,
     )
 
-    fun verifyEmail(token: String)
+    fun verifyEmail(
+        initiatorId: Long,
+        token: String,
+    )
 
     fun changeUsername(
-        serviceUser: ServiceUser,
+        initiatorId: Long,
         newUsername: String,
     )
 
-    fun verifyUsername(token: String)
+    fun verifyUsername(
+        initiatorId: Long,
+        token: String,
+    )
 
     fun changePassword(
-        serviceUser: ServiceUser,
+        initiatorId: Long,
         newPassword: String,
     )
 
-    fun verifyPassword(token: String)
+    fun verifyPassword(
+        initiatorId: Long,
+        token: String,
+    )
+
+    fun getInfoAboutUser(initiatorId: Long): DetailProfileInfo
+
+    fun getInfoAboutOtherUser(
+        initiatorId: Long,
+        userId: Long,
+    ): ProfileInfo
 }
