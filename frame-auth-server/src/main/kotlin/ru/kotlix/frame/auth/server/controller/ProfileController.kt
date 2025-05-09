@@ -1,18 +1,21 @@
 package ru.kotlix.frame.auth.server.controller
 
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import ru.kotlix.frame.auth.api.ProfileApi
 import ru.kotlix.frame.auth.api.dto.ChangeEmailRequest
 import ru.kotlix.frame.auth.api.dto.ChangePasswordRequest
 import ru.kotlix.frame.auth.api.dto.ChangeUsernameRequest
+import ru.kotlix.frame.auth.api.dto.FullProfileInfoDto
+import ru.kotlix.frame.auth.api.dto.ProfileInfoDto
+import ru.kotlix.frame.auth.server.mapper.toFullProfileInfoDto
+import ru.kotlix.frame.auth.server.mapper.toProfileInfoDto
 import ru.kotlix.frame.auth.server.service.ProfileService
-import ru.kotlix.frame.auth.server.service.dto.ServiceUser
 
 @RestController
 @RequestMapping("/api/v1/profile")
@@ -21,46 +24,66 @@ class ProfileController(
 ) : ProfileApi {
     @PostMapping("/email")
     override fun changeEmail(
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @RequestBody request: ChangeEmailRequest,
     ) {
-        val serviceUser = SecurityContextHolder.getContext().authentication.principal as ServiceUser
-        profileService.changeEmail(serviceUser, request.newEmail)
+        profileService.changeEmail(initiatorId, request.newEmail)
     }
 
     @GetMapping("/email-verify/{secret}")
     override fun changeEmailApply(
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @PathVariable("secret") secret: String,
     ) {
-        profileService.verifyEmail(secret)
+        profileService.verifyEmail(initiatorId, secret)
     }
 
     @PostMapping("/username")
     override fun changeUsername(
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @RequestBody request: ChangeUsernameRequest,
     ) {
-        val serviceUser = SecurityContextHolder.getContext().authentication.principal as ServiceUser
-        profileService.changeUsername(serviceUser, request.newUsername)
+        profileService.changeUsername(initiatorId, request.newUsername)
     }
 
     @GetMapping("/username-verify/{secret}")
     override fun changeUsernameApply(
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @PathVariable("secret") secret: String,
     ) {
-        profileService.verifyUsername(secret)
+        profileService.verifyUsername(initiatorId, secret)
     }
 
     @PostMapping("/password")
     override fun changePassword(
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @RequestBody request: ChangePasswordRequest,
     ) {
-        val serviceUser = SecurityContextHolder.getContext().authentication.principal as ServiceUser
-        profileService.changePassword(serviceUser, request.newPassword)
+        profileService.changePassword(initiatorId, request.newPassword)
     }
 
     @GetMapping("/password-verify/{secret}")
     override fun changePasswordApply(
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @PathVariable("secret") secret: String,
     ) {
-        profileService.verifyPassword(secret)
+        profileService.verifyPassword(initiatorId, secret)
     }
+
+    @GetMapping("/getInfo")
+    override fun getMyProfileInfo(
+        @RequestHeader("Initiator-Id") initiatorId: Long,
+    ): FullProfileInfoDto = profileService.getInfoAboutUser(initiatorId).toFullProfileInfoDto()
+
+    @GetMapping("/getInfo/{userId}")
+    override fun getProfileInfo(
+        @RequestHeader("Initiator-Id") initiatorId: Long,
+        @PathVariable("userId") userId: Long,
+    ): ProfileInfoDto = profileService.getInfoAboutOtherUser(initiatorId, userId).toProfileInfoDto()
 }

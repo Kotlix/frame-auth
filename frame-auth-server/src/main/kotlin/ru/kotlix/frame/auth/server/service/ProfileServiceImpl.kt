@@ -16,7 +16,9 @@ import ru.kotlix.frame.auth.server.repo.UserProfileRepository
 import ru.kotlix.frame.auth.server.repo.dto.ConfirmEmailEntity
 import ru.kotlix.frame.auth.server.repo.dto.ConfirmPasswordEntity
 import ru.kotlix.frame.auth.server.repo.dto.ConfirmUsernameEntity
-import ru.kotlix.frame.auth.server.service.dto.ServiceUser
+import ru.kotlix.frame.auth.server.repo.extension.ProfileNotFoundException
+import ru.kotlix.frame.auth.server.service.dto.DetailProfileInfo
+import ru.kotlix.frame.auth.server.service.dto.ProfileInfo
 import ru.kotlix.frame.auth.server.service.exception.AuthenticationFailedException
 import ru.kotlix.frame.auth.server.service.exception.ProfileChangeException
 import ru.kotlix.frame.auth.server.token.dto.VerificationToken
@@ -41,10 +43,10 @@ class ProfileServiceImpl(
         propagation = Propagation.REQUIRED,
     )
     override fun changeEmail(
-        serviceUser: ServiceUser,
+        initiatorId: Long,
         newEmail: String,
     ) {
-        confirmEmailRepository.findLast(serviceUser.id)?.let {
+        confirmEmailRepository.findLast(initiatorId)?.let {
             if (it.createdAt!!.plusMinutes(15).isAfter(OffsetDateTime.now())) {
                 throw ProfileChangeException("Retry delay required")
             }
@@ -59,7 +61,7 @@ class ProfileServiceImpl(
                     createdAt = null,
                     expiresAt = now.plusMinutes(15),
                     confirmed = null,
-                    userId = serviceUser.id,
+                    userId = initiatorId,
                     newEmail = newEmail,
                 ),
             )
@@ -73,9 +75,12 @@ class ProfileServiceImpl(
             )
 
         val mimeMessage = javaMailSender.createMimeMessage()
+
+        val email = profileRepository.findByAuthId(initiatorId)?.email!!
+
         MimeMessageHelper(mimeMessage, false).apply {
             setFrom("registration@frame.kotlix.dev")
-            setTo(serviceUser.email)
+            setTo(email)
             setSubject("Please, confirm your email update")
             setText(
                 "You are changing your current email to $newEmail. Your verification token is: '$token'." +
@@ -89,7 +94,10 @@ class ProfileServiceImpl(
         readOnly = false,
         propagation = Propagation.REQUIRED,
     )
-    override fun verifyEmail(token: String) {
+    override fun verifyEmail(
+        initiatorId: Long,
+        token: String,
+    ) {
         val verificationToken = tokenDecoder.getPayload(token)
         val confirmEmailEntity =
             confirmEmailRepository.findById(verificationToken.id)
@@ -113,10 +121,10 @@ class ProfileServiceImpl(
         propagation = Propagation.REQUIRED,
     )
     override fun changeUsername(
-        serviceUser: ServiceUser,
+        initiatorId: Long,
         newUsername: String,
     ) {
-        confirmUsernameRepository.findLast(serviceUser.id)?.let {
+        confirmUsernameRepository.findLast(initiatorId)?.let {
             if (it.createdAt!!.plusMinutes(15).isAfter(OffsetDateTime.now())) {
                 throw ProfileChangeException("Retry delay required")
             }
@@ -131,7 +139,7 @@ class ProfileServiceImpl(
                     createdAt = null,
                     expiresAt = now.plusMinutes(15),
                     confirmed = null,
-                    userId = serviceUser.id,
+                    userId = initiatorId,
                     newUsername = newUsername,
                 ),
             )
@@ -144,10 +152,12 @@ class ProfileServiceImpl(
                 ),
             )
 
+        val email = profileRepository.findByAuthId(initiatorId)?.email!!
+
         val mimeMessage = javaMailSender.createMimeMessage()
         MimeMessageHelper(mimeMessage, false).apply {
             setFrom("registration@frame.kotlix.dev")
-            setTo(serviceUser.email)
+            setTo(email)
             setSubject("Please, confirm your username update")
             setText(
                 "You are changing your current username to $newUsername. Your verification token is: '$outToken'." +
@@ -161,7 +171,10 @@ class ProfileServiceImpl(
         readOnly = false,
         propagation = Propagation.REQUIRED,
     )
-    override fun verifyUsername(token: String) {
+    override fun verifyUsername(
+        initiatorId: Long,
+        token: String,
+    ) {
         val verificationToken = tokenDecoder.getPayload(token)
         val confirmUsernameEntity =
             confirmUsernameRepository.findById(verificationToken.id)
@@ -185,10 +198,10 @@ class ProfileServiceImpl(
         propagation = Propagation.REQUIRED,
     )
     override fun changePassword(
-        serviceUser: ServiceUser,
+        initiatorId: Long,
         newPassword: String,
     ) {
-        confirmPasswordRepository.findLast(serviceUser.id)?.let {
+        confirmPasswordRepository.findLast(initiatorId)?.let {
             if (it.createdAt!!.plusMinutes(15).isAfter(OffsetDateTime.now())) {
                 throw ProfileChangeException("Retry delay required")
             }
@@ -203,7 +216,7 @@ class ProfileServiceImpl(
                     createdAt = null,
                     expiresAt = now.plusMinutes(15),
                     confirmed = null,
-                    userId = serviceUser.id,
+                    userId = initiatorId,
                     newPassword = passwordEncryptor.encrypt(newPassword),
                 ),
             )
@@ -216,10 +229,12 @@ class ProfileServiceImpl(
                 ),
             )
 
+        val email = profileRepository.findByAuthId(initiatorId)?.email!!
+
         val mimeMessage = javaMailSender.createMimeMessage()
         MimeMessageHelper(mimeMessage, false).apply {
             setFrom("registration@frame.kotlix.dev")
-            setTo(serviceUser.email)
+            setTo(email)
             setSubject("Please, confirm your password update")
             setText(
                 "You are changing your current password. Your verification token is: '$outToken'." +
@@ -233,7 +248,10 @@ class ProfileServiceImpl(
         readOnly = false,
         propagation = Propagation.REQUIRED,
     )
-    override fun verifyPassword(token: String) {
+    override fun verifyPassword(
+        initiatorId: Long,
+        token: String,
+    ) {
         val verificationToken = tokenDecoder.getPayload(token)
         val confirmPasswordEntity =
             confirmPasswordRepository.findById(verificationToken.id)
@@ -250,6 +268,30 @@ class ProfileServiceImpl(
         }
         confirmPasswordRepository.setConfirmed(confirmPasswordEntity)
         authRepository.updatePassword(confirmPasswordEntity.userId, confirmPasswordEntity.newPassword)
+    }
+
+    @Transactional
+    override fun getInfoAboutUser(initiatorId: Long): DetailProfileInfo {
+        val userProfile = profileRepository.findByAuthId(initiatorId)!!
+        val userAuth = authRepository.findById(initiatorId)!!
+
+        return DetailProfileInfo(
+            login = userAuth.login,
+            username = userProfile.username,
+            email = userProfile.email,
+        )
+    }
+
+    @Transactional
+    override fun getInfoAboutOtherUser(
+        initiatorId: Long,
+        userId: Long,
+    ): ProfileInfo {
+        val userProfile = profileRepository.findByAuthId(userId) ?: throw ProfileNotFoundException(userId)
+
+        return ProfileInfo(
+            username = userProfile.username,
+        )
     }
 
     private fun cropToken(token: String): String {

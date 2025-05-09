@@ -3,17 +3,44 @@ package ru.kotlix.frame.auth.api
 import ru.kotlix.frame.auth.api.dto.ChangeEmailRequest
 import ru.kotlix.frame.auth.api.dto.ChangePasswordRequest
 import ru.kotlix.frame.auth.api.dto.ChangeUsernameRequest
+import ru.kotlix.frame.auth.api.dto.FullProfileInfoDto
+import ru.kotlix.frame.auth.api.dto.ProfileInfoDto
 
 interface ProfileApi {
-    fun changeEmail(request: ChangeEmailRequest)
+    fun changeEmail(
+        initiatorId: Long,
+        request: ChangeEmailRequest,
+    )
 
-    fun changeEmailApply(secret: String)
+    fun changeEmailApply(
+        initiatorId: Long,
+        secret: String,
+    )
 
-    fun changeUsername(request: ChangeUsernameRequest)
+    fun changeUsername(
+        initiatorId: Long,
+        request: ChangeUsernameRequest,
+    )
 
-    fun changeUsernameApply(secret: String)
+    fun changeUsernameApply(
+        initiatorId: Long,
+        secret: String,
+    )
 
-    fun changePassword(request: ChangePasswordRequest)
+    fun changePassword(
+        initiatorId: Long,
+        request: ChangePasswordRequest,
+    )
 
-    fun changePasswordApply(secret: String)
+    fun changePasswordApply(
+        initiatorId: Long,
+        secret: String,
+    )
+
+    fun getMyProfileInfo(initiatorId: Long): FullProfileInfoDto
+
+    fun getProfileInfo(
+        initiatorId: Long,
+        userId: Long,
+    ): ProfileInfoDto
 }
