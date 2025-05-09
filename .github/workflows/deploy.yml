@@ -66,17 +66,18 @@ jobs:
 
       - name: Build with Gradle
         if: ${{ inputs.build_image }}
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./gradlew build
           mv $KTX_JAR_PATH ./docker/app.jar
 
       - name: Build Docker image
         if: ${{ inputs.build_image }}
-        run: docker build -t $KTX_IMAGE_NAME:$KTX_IMAGE_VERSION ./docker
-
-      - name: K8s store image
-        if: ${{ inputs.build_image }}
-        run: minikube image load $KTX_IMAGE_NAME:$KTX_IMAGE_VERSION
+        run: |
+          eval $(minikube docker-env)
+          docker build -t $KTX_IMAGE_NAME:$KTX_IMAGE_VERSION ./docker
 
       - name: Deploy to k8s
         env:
