@@ -12,6 +12,8 @@ import ru.kotlix.frame.auth.api.dto.BasicRegisterRequest
 import ru.kotlix.frame.auth.api.dto.ChangeEmailRequest
 import ru.kotlix.frame.auth.api.dto.ChangePasswordRequest
 import ru.kotlix.frame.auth.api.dto.ChangeUsernameRequest
+import ru.kotlix.frame.auth.api.dto.FullProfileInfoDto
+import ru.kotlix.frame.auth.api.dto.ProfileInfoDto
 
 @FeignClient(name = "frame-auth-client", path = "/api/v1")
 interface AuthClient {
@@ -37,37 +39,54 @@ interface AuthClient {
 
     @PostMapping("/profile/email")
     fun changeEmail(
-        @RequestHeader("Authorization") bearerToken: AccessToken,
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @RequestBody request: ChangeEmailRequest,
     )
 
     @GetMapping("/profile/email-verify/{secret}")
     fun changeEmailApply(
-        @RequestHeader("Authorization") bearerToken: AccessToken,
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @PathVariable("secret") secret: String,
     )
 
     @PostMapping("/profile/username")
     fun changeUsername(
-        @RequestHeader("Authorization") bearerToken: AccessToken,
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @RequestBody request: ChangeUsernameRequest,
     )
 
     @GetMapping("/profile/username-verify/{secret}")
     fun changeUsernameApply(
-        @RequestHeader("Authorization") bearerToken: AccessToken,
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @PathVariable("secret") secret: String,
     )
 
     @PostMapping("/profile/password")
     fun changePassword(
-        @RequestHeader("Authorization") bearerToken: AccessToken,
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @RequestBody request: ChangePasswordRequest,
     )
 
     @GetMapping("/profile/password-verify/{secret}")
     fun changePasswordApply(
-        @RequestHeader("Authorization") bearerToken: AccessToken,
+        @RequestHeader("Initiator-Id")
+        initiatorId: Long,
         @PathVariable("secret") secret: String,
     )
+
+    @GetMapping("/profile/getInfo")
+    fun getMyProfileInfo(
+        @RequestHeader("Initiator-Id") initiatorId: Long,
+    ): FullProfileInfoDto
+
+    @GetMapping("/profile/getInfo/{userId}")
+    fun getProfileInfo(
+        @RequestHeader("Initiator-Id") initiatorId: Long,
+        @PathVariable("userId") userId: Long,
+    ): ProfileInfoDto
 }
