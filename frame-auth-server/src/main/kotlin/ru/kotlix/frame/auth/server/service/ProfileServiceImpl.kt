@@ -276,6 +276,10 @@ class ProfileServiceImpl(
             authRepository.findById(initiatorId)
                 ?: throw ProfileNotFoundException(initiatorId)
 
+        if (!userAuth.verified) {
+            throw RuntimeException("Auth entity id=${userAuth.id} is not verified.")
+        }
+
         val userProfile =
             profileRepository.findByAuthId(userAuth.id!!)
                 ?: throw RuntimeException("Auth entity id=${userAuth.id} exists, but profile entity does not.")
@@ -293,9 +297,17 @@ class ProfileServiceImpl(
         initiatorId: Long,
         userId: Long,
     ): ProfileInfo {
-        val userProfile =
-            profileRepository.findByAuthId(userId)
+        val userAuth =
+            authRepository.findById(userId)
                 ?: throw ProfileNotFoundException(userId)
+
+        if (!userAuth.verified) {
+            throw RuntimeException("Auth entity id=${userAuth.id} is not verified.")
+        }
+
+        val userProfile =
+            profileRepository.findByAuthId(userAuth.id!!)
+                ?: throw ProfileNotFoundException(userAuth.id)
 
         return ProfileInfo(
             username = userProfile.username,
