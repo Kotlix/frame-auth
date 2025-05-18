@@ -17,6 +17,7 @@ import ru.kotlix.frame.auth.server.repo.dto.ConfirmEmailEntity
 import ru.kotlix.frame.auth.server.repo.dto.ConfirmPasswordEntity
 import ru.kotlix.frame.auth.server.repo.dto.ConfirmUsernameEntity
 import ru.kotlix.frame.auth.server.repo.extension.ProfileNotFoundException
+import ru.kotlix.frame.auth.server.repo.extension.UserNotVerifiedException
 import ru.kotlix.frame.auth.server.service.dto.DetailProfileInfo
 import ru.kotlix.frame.auth.server.service.dto.ProfileInfo
 import ru.kotlix.frame.auth.server.service.exception.AuthenticationFailedException
@@ -276,6 +277,10 @@ class ProfileServiceImpl(
             authRepository.findById(initiatorId)
                 ?: throw ProfileNotFoundException(initiatorId)
 
+        if (!userAuth.verified) {
+            throw UserNotVerifiedException(userAuth.id!!)
+        }
+
         val userProfile =
             profileRepository.findByAuthId(userAuth.id!!)
                 ?: throw RuntimeException("Auth entity id=${userAuth.id} exists, but profile entity does not.")
@@ -293,9 +298,17 @@ class ProfileServiceImpl(
         initiatorId: Long,
         userId: Long,
     ): ProfileInfo {
-        val userProfile =
-            profileRepository.findByAuthId(userId)
+        val userAuth =
+            authRepository.findById(userId)
                 ?: throw ProfileNotFoundException(userId)
+
+        if (!userAuth.verified) {
+            throw UserNotVerifiedException(userAuth.id!!)
+        }
+
+        val userProfile =
+            profileRepository.findByAuthId(userAuth.id!!)
+                ?: throw ProfileNotFoundException(userAuth.id)
 
         return ProfileInfo(
             username = userProfile.username,
