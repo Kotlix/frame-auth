@@ -272,11 +272,16 @@ class ProfileServiceImpl(
 
     @Transactional
     override fun getInfoAboutUser(initiatorId: Long): DetailProfileInfo {
-        val userProfile = profileRepository.findByAuthId(initiatorId)!!
-        val userAuth = authRepository.findById(initiatorId)!!
+        val userAuth =
+            authRepository.findById(initiatorId)
+                ?: throw ProfileNotFoundException(initiatorId)
+
+        val userProfile =
+            profileRepository.findByAuthId(userAuth.id!!)
+                ?: throw RuntimeException("Auth entity id=${userAuth.id} exists, but profile entity does not.")
 
         return DetailProfileInfo(
-            id = userAuth.id!!,
+            id = userAuth.id,
             login = userAuth.login,
             username = userProfile.username,
             email = userProfile.email,
@@ -288,7 +293,9 @@ class ProfileServiceImpl(
         initiatorId: Long,
         userId: Long,
     ): ProfileInfo {
-        val userProfile = profileRepository.findByAuthId(userId) ?: throw ProfileNotFoundException(userId)
+        val userProfile =
+            profileRepository.findByAuthId(userId)
+                ?: throw ProfileNotFoundException(userId)
 
         return ProfileInfo(
             username = userProfile.username,
