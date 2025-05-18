@@ -17,6 +17,7 @@ import ru.kotlix.frame.auth.server.repo.dto.ConfirmEmailEntity
 import ru.kotlix.frame.auth.server.repo.dto.ConfirmPasswordEntity
 import ru.kotlix.frame.auth.server.repo.dto.ConfirmUsernameEntity
 import ru.kotlix.frame.auth.server.repo.extension.ProfileNotFoundException
+import ru.kotlix.frame.auth.server.repo.extension.UserNotVerifiedException
 import ru.kotlix.frame.auth.server.service.dto.DetailProfileInfo
 import ru.kotlix.frame.auth.server.service.dto.ProfileInfo
 import ru.kotlix.frame.auth.server.service.exception.AuthenticationFailedException
@@ -277,7 +278,7 @@ class ProfileServiceImpl(
                 ?: throw ProfileNotFoundException(initiatorId)
 
         if (!userAuth.verified) {
-            throw RuntimeException("Auth entity id=${userAuth.id} is not verified.")
+            throw UserNotVerifiedException(userAuth.id!!)
         }
 
         val userProfile =
@@ -302,7 +303,7 @@ class ProfileServiceImpl(
                 ?: throw ProfileNotFoundException(userId)
 
         if (!userAuth.verified) {
-            throw RuntimeException("Auth entity id=${userAuth.id} is not verified.")
+            throw UserNotVerifiedException(userAuth.id!!)
         }
 
         val userProfile =
