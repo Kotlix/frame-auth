@@ -7,8 +7,15 @@ spec:
   selector:
     matchLabels:
       app: ${KTX_APP_NAME}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
   template:
     metadata:
+      annotations:
+        checksum/config: ${KTX_CONFIG_HASH}
       labels:
         app: ${KTX_APP_NAME}
     spec:
@@ -16,21 +23,23 @@ spec:
         - name: ${KTX_APP_NAME}
           image: ${KTX_IMAGE_NAME}:${KTX_IMAGE_VERSION}
           imagePullPolicy: Never
-          command: ["java","-Dspring.profiles.active=${KTX_APP_PROFILE}","-jar","/app.jar"]
+          command: ["java", "-jar", "/app.jar"]
           ports:
             - containerPort: 8080
-          env:
-            - name: DB_ADDRESS
-              value: ${DB_ADDRESS}
-            - name: DB_NAME
-              value: ${DB_NAME}
-            - name: DB_USER
-              value: ${DB_USER}
-            - name: DB_PASSWORD
-              value: ${DB_PASSWORD}
-            - name: SMTP_USER
-              value: ${SMTP_USER}
-            - name: SMTP_PASSWORD
-              value: ${SMTP_PASSWORD}
-            - name: KTX_AUTH_SECRET
-              value: ${KTX_AUTH_SECRET}
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "150m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: ${KTX_APP_NAME}
+            items:
+              - key: application.yaml
+                path: application.yaml
