@@ -1,6 +1,5 @@
 package ru.kotlix.frame.auth.server.service
 
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
@@ -24,7 +23,6 @@ import ru.kotlix.frame.auth.server.service.dto.ProfileInfo
 import ru.kotlix.frame.auth.server.service.exception.AuthenticationFailedException
 import ru.kotlix.frame.auth.server.service.exception.ProfileChangeException
 import ru.kotlix.frame.auth.server.token.dto.VerificationToken
-import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -40,8 +38,6 @@ class ProfileServiceImpl(
     val tokenDecoder: TokenDecoder<VerificationToken>,
     val passwordEncryptor: PasswordEncryptor,
     val javaMailSender: JavaMailSender,
-    @Value("\${token.ttl}")
-    private val tokenLiveDuration: Duration = Duration.ofMillis(30000L),
 ) : ProfileService {
     @Transactional(
         readOnly = false,
@@ -52,10 +48,7 @@ class ProfileServiceImpl(
         newEmail: String,
     ) {
         confirmEmailRepository.findLast(initiatorId)?.let {
-            if (it.createdAt!!
-                    .plus(tokenLiveDuration)
-                    .isAfter(OffsetDateTime.now())
-            ) {
+            if (it.createdAt!!.plusMinutes(15).isAfter(OffsetDateTime.now())) {
                 throw ProfileChangeException("Retry delay required")
             }
         }

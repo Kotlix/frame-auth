@@ -33,3 +33,4 @@ data:
 
     token:
       secret-key: ${KTX_AUTH_SECRET}
+      ttl: 24h

@@ -1,5 +1,6 @@
 package ru.kotlix.frame.auth.server.service
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
@@ -23,6 +24,7 @@ import ru.kotlix.frame.auth.server.service.exception.AuthenticationExpiredExcept
 import ru.kotlix.frame.auth.server.service.exception.AuthenticationFailedException
 import ru.kotlix.frame.auth.server.service.exception.RegistrationFailedException
 import ru.kotlix.frame.auth.server.token.dto.VerificationToken
+import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -39,6 +41,8 @@ class AuthenticationServiceImpl(
     val verifyTokenEncoder: TokenEncoder<VerificationToken>,
     val verifyTokenDecoder: TokenDecoder<VerificationToken>,
     val javaMailSender: JavaMailSender,
+    @Value("\${token.ttl}")
+    private val tokenLifetime: Duration = Duration.ofMillis(30000L),
 ) : AuthenticationService {
     @Transactional(
         readOnly = false,
@@ -65,16 +69,17 @@ class AuthenticationServiceImpl(
         val authId = authEnt.id!!
         val profileEnt = userProfileRepository.findByAuthId(authId)!!
         val username = profileEnt.username
+        val expiresAt = OffsetDateTime.now().plus(tokenLifetime)
         val token =
             authTokenEncoder.encodeAndSign(
                 UserInfo(
                     id = authId,
                     login = login,
                     username = username,
-                    timestamp = Instant.now().epochSecond,
+                    timestamp = expiresAt.toEpochSecond(),
                 ),
             )
-        tokenRepository.upsertToken(TokenEntity(token, OffsetDateTime.now().plusMinutes(5), authId))
+        tokenRepository.upsertToken(TokenEntity(token, expiresAt, authId))
         return token
     }
 
@@ -210,7 +215,10 @@ class AuthenticationServiceImpl(
         val te =
             tokenRepository.findTokenByAuthId(tokenPayload.id)
                 ?: throw AuthenticationFailedException("Token authId unknown")
-        if (te.expiresAt.isBefore(OffsetDateTime.now())) {
+        if (te.content != token) {
+            throw AuthenticationFailedException("Token has changed.")
+        }
+        if (Instant.ofEpochSecond(tokenPayload.timestamp).isBefore(Instant.now())) {
             throw AuthenticationExpiredException("Token expired")
         }
         if (authTokenEncoder.encodeAndSign(tokenPayload) != token) {
